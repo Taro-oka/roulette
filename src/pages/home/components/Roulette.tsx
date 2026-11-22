@@ -7,7 +7,7 @@ import {
   getRequiredDistances,
   type Point,
 } from "@/utils/math";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   animationConfig,
   colors,
@@ -171,6 +171,13 @@ export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
 
     initialized.current = true;
   }, [degreePerPerson]);
+
+  useEffect(() => {
+    // コンポーネントが破棄される時はアニメーション終了時の通知を発火させないためにrefをあえて狂わせる
+    return () => {
+      rotationRef.current++;
+    };
+  }, []);
 
   return (
     <div className="w-full p-2">
