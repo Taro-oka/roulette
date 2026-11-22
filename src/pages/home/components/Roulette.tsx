@@ -2,7 +2,7 @@ import {
   centerOf,
   distanceBetween,
   dividePoints,
-  getLeftPoint,
+  getLeftOffsetPoint,
   getRandomDeg,
   getRequiredDistances,
   type Point,
@@ -129,7 +129,7 @@ export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
       let cursorPoint: Point;
 
       while (true) {
-        cursorPoint = getLeftPoint(
+        cursorPoint = getLeftOffsetPoint(
           currentDivisionPoint,
           nextDivisionPoint,
           cursor,

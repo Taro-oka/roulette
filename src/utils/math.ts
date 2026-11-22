@@ -14,16 +14,18 @@ export const getRandomDeg = (blackList: number[] = []): number => {
   return random;
 };
 
-/**
- * aからbへ向かう直線に対して、
- * bを起点に左方向へN進んだ座標を取得
- */
-export const getLeftPoint = (a: Point, b: Point, n: number): Point => {
+// aからbへ向かう直線に対して、bを起点に左方向へN進んだ座標を取得
+export const getLeftOffsetPoint = (a: Point, b: Point, n: number): Point => {
+  //bに向かってのベクトルを取得
   const dx = b.x - a.x;
   const dy = b.y - a.y;
 
   const length = Math.hypot(dx, dy);
 
+  /*
+  b地点からのそのベクトルを左に90度回転(x成分,y成分が逆転)させ、
+  そのベクトルの量を1に相殺(lengthで割る)し、最後に求めたい移動量であるnをかける
+  */
   return {
     x: b.x + (dy / length) * n,
     y: b.y - (dx / length) * n,
