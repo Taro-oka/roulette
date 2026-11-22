@@ -8,13 +8,19 @@ import {
   type Point,
 } from "@/utils/math";
 import { useLayoutEffect, useRef, useState } from "react";
-import { animationConfig, colors, RADIUS } from "../constants";
+import {
+  animationConfig,
+  colors,
+  DEFAULT_ROTATION_TIMES,
+  RADIUS,
+} from "../constants";
 
 type RouletteProps = {
   people: string[];
+  onAnimationEnd?: (person: string) => void;
 };
 
-export const Roulette = ({ people }: RouletteProps) => {
+export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
   const initialized = useRef<boolean>(false);
   const rouletteRef = useRef<HTMLDivElement>(null);
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -59,19 +65,16 @@ export const Roulette = ({ people }: RouletteProps) => {
       : [];
 
     const targetDeg = getRandomDeg(blackList);
-    // degreesを大きい方から見ていって、最初にtargetDegを超えたものが当たりのインデックスに一致する
-    const targetIndex = degrees.reverse().findIndex((deg) => targetDeg >= deg);
 
-    console.log(`${targetIndex}がターゲット`);
-
-    const rotation = [
-      { transform: "rotate(0)" },
-      {
-        transform: `rotate(${360 * 8 + targetDeg}deg)`,
-      },
-    ];
-
-    const res = rouletteRef.current.animate(rotation, animationConfig);
+    const res = rouletteRef.current.animate(
+      [
+        { transform: "rotate(0)" },
+        {
+          transform: `rotate(${360 * DEFAULT_ROTATION_TIMES + targetDeg}deg)`,
+        },
+      ],
+      animationConfig,
+    );
 
     await res.finished;
 
@@ -80,7 +83,13 @@ export const Roulette = ({ people }: RouletteProps) => {
       return;
     }
 
-    console.log("終わった");
+    if (onAnimationEnd) {
+      // degreesを大きい方から見ていって、最初にtargetDegを超えたものが当たりのインデックスに一致する
+      const targetIndex = degrees
+        .reverse()
+        .findIndex((deg) => targetDeg >= deg);
+      onAnimationEnd(people[targetIndex]);
+    }
   };
 
   useLayoutEffect(() => {
@@ -149,7 +158,7 @@ export const Roulette = ({ people }: RouletteProps) => {
           height: height,
           translateX: xAmount,
           translateY: yAmount - height,
-          deg: degreePerPerson * i - degreePerPerson,
+          deg: degreePerPerson * i - (90 - degreePerPerson / 2),
         });
         return _prev;
       });

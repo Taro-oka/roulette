@@ -5,7 +5,12 @@ function Home() {
   return (
     <div>
       <h1 className="text-2xl font-bold p-2">ルーレット</h1>
-      <Roulette people={people} />
+      <Roulette
+        people={people}
+        onAnimationEnd={(name: string) => {
+          alert(`${name}です！`);
+        }}
+      />
     </div>
   );
 }

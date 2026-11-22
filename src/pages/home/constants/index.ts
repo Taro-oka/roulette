@@ -1,4 +1,5 @@
 export const RADIUS = 250;
+export const DEFAULT_ROTATION_TIMES = 8;
 
 // TODO: 動的に
 export const people = ["Taro", "Jiro", "Saburo", "Shiro", "Goro", "Rokuro"];
