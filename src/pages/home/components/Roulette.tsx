@@ -14,7 +14,7 @@ import {
   DEFAULT_ROTATION_TIMES,
   RADIUS,
 } from "../constants";
-import type { Participant } from "@/types/participants";
+import type { Participant } from "@/types/participant";
 
 type RouletteProps = {
   participants: Participant[];

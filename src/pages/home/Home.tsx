@@ -1,4 +1,4 @@
-import type { Participant } from "@/types/participants";
+import type { Participant } from "@/types/participant";
 import { Roulette } from "./components/Roulette";
 
 const participants: Participant[] = [
