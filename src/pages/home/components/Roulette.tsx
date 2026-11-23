@@ -14,24 +14,25 @@ import {
   DEFAULT_ROTATION_TIMES,
   RADIUS,
 } from "../constants";
+import type { Participant } from "@/types/participants";
 
 type RouletteProps = {
-  people: string[];
+  participants: Participant[];
   onAnimationEnd?: (person: string) => void;
 };
 
-export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
+export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
   const initialized = useRef<boolean>(false);
   const rouletteRef = useRef<HTMLDivElement>(null);
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  const degreePerPerson = 360 / people.length;
-  const conicGradient = people
+  const degreePerPerson = 360 / participants.length;
+  const conicGradient = participants
     .map((_, i) => colors[i % colors.length])
     .map((color, i) => {
       return i === 0
         ? `${color} ${degreePerPerson}deg`
-        : i === people.length - 1
+        : i === participants.length - 1
           ? `${color} ${degreePerPerson * i}deg `
           : `${color} ${degreePerPerson * i}deg ${degreePerPerson * (i + 1)}deg`;
     })
@@ -56,7 +57,7 @@ export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
     rotationRef.current++;
     const refNum = rotationRef.current;
 
-    const degrees = people.map((_, i) => degreePerPerson * i);
+    const degrees = participants.map((_, i) => degreePerPerson * i);
     const blackList = Number.isInteger(degreePerPerson)
       ? Array(360)
           .fill(0)
@@ -88,7 +89,7 @@ export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
       const targetIndex = degrees
         .reverse()
         .findIndex((deg) => targetDeg >= deg);
-      onAnimationEnd(people[targetIndex]);
+      onAnimationEnd(participants[targetIndex].name ?? "unknown");
     }
   };
 
@@ -197,13 +198,13 @@ export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
           ref={rouletteRef}
         >
           <div className="w-4 h-4 rounded-full bg-black absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"></div>
-          {people.map((_, i) => (
+          {participants.map((_, i) => (
             <div
               key={i}
               className={`w-0.5 h-62.5 bg-black absolute left-1/2 -translate-x-1/2 origin-[50%_100%] bar-${i}`}
               // Tailwind cssでクラスを組み立てるのに限界がある（挙動が安定しない)ためインラインスタイルで
               style={{
-                transform: `rotate(${(360 / people.length) * i}deg)`,
+                transform: `rotate(${(360 / participants.length) * i}deg)`,
               }}
               ref={(el) => {
                 if (el) {
@@ -228,7 +229,7 @@ export const Roulette = ({ people, onAnimationEnd }: RouletteProps) => {
                 }}
               >
                 <span className="p-1 font-bold absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
-                  {people[i]}
+                  {participants[i].name ?? "unknown"}
                 </span>
               </div>
             ),
