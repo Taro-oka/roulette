@@ -70,3 +70,7 @@ export const dividePoints = (
     y: a.y + (b.y - a.y) * t,
   };
 };
+
+export const toRadian = (deg: number): number => {
+  return (deg * Math.PI) / 180;
+};

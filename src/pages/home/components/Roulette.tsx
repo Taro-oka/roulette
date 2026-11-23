@@ -5,9 +5,16 @@ import {
   getLeftOffsetPoint,
   getRandomDeg,
   getRequiredDistances,
+  toRadian,
   type Point,
 } from "@/utils/math";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   animationConfig,
   colors,
@@ -38,8 +45,6 @@ export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
     })
     .join(",");
 
-  const [tempCalcElementEnabled, setTempCalcElementEnabled] =
-    useState<boolean>(true);
   const [nameContainerPositions, setNameContainerPositions] = useState<
     {
       width: number;
@@ -93,6 +98,39 @@ export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
     }
   };
 
+  const getRequiredDistancesToEnd = useCallback(
+    (i: number): Point => {
+      const targetDeg = degreePerPerson * i;
+
+      let x: number;
+      let y: number;
+
+      if (targetDeg < 90) {
+        // 第1象限
+        x = Math.cos(toRadian(90 - targetDeg));
+        y = Math.sin(toRadian(90 - targetDeg)) * -1;
+      } else if (targetDeg < 180) {
+        // 第2象限
+        x = Math.cos(toRadian(targetDeg - 90));
+        y = Math.sin(toRadian(targetDeg - 90));
+      } else if (targetDeg < 270) {
+        // 第3象限
+        x = Math.cos(toRadian(90 - (targetDeg % 90))) * -1;
+        y = Math.sin(toRadian(90 - (targetDeg % 90)));
+      } else {
+        // 第4象限
+        x = Math.cos(toRadian(targetDeg % 90)) * -1;
+        y = Math.sin(toRadian(targetDeg % 90)) * -1;
+      }
+
+      return {
+        x: x * RADIUS,
+        y: y * RADIUS,
+      };
+    },
+    [degreePerPerson],
+  );
+
   useLayoutEffect(() => {
     if (!barsRef.current.length) return;
     if (!barsRef.current.every(Boolean)) return;
@@ -100,15 +138,21 @@ export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
 
     if (initialized.current) return;
 
+    const centerOfRoulette = centerOf(rouletteRef.current);
+
     const bars: {
       ref: HTMLDivElement;
       endCoordinate: Point;
-    }[] = (barsRef.current as HTMLDivElement[]).map((bar) => ({
-      ref: bar,
-      endCoordinate: centerOf(bar.children[0]),
-    }));
-
-    const centerOfRoulette = centerOf(rouletteRef.current);
+    }[] = (barsRef.current as HTMLDivElement[]).map((bar, i) => {
+      const { x: xDistance, y: yDistance } = getRequiredDistancesToEnd(i);
+      return {
+        ref: bar,
+        endCoordinate: {
+          x: centerOfRoulette.x + xDistance,
+          y: centerOfRoulette.y + yDistance,
+        },
+      };
+    });
 
     const ratio: [number, number] = [1, 3];
     for (let i = 0; i < bars.length; i++) {
@@ -165,13 +209,8 @@ export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
       });
     }
 
-    // 後処理
-    requestAnimationFrame(() => {
-      setTempCalcElementEnabled(false);
-    });
-
     initialized.current = true;
-  }, [degreePerPerson]);
+  }, [degreePerPerson, getRequiredDistancesToEnd]);
 
   useEffect(() => {
     // コンポーネントが破棄される時はアニメーション終了時の通知を発火させないためにrefをあえて狂わせる
@@ -213,11 +252,7 @@ export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
                   barsRef.current[i] = el;
                 }
               }}
-            >
-              {tempCalcElementEnabled && (
-                <div className="absolute w-3 h-3 top-0 left-1/2 -translate-y-1/2 -translate-x-1/2"></div>
-              )}
-            </div>
+            ></div>
           ))}
           {nameContainerPositions.map(
             ({ width, height, translateX: x, translateY: y, deg }, i) => (
