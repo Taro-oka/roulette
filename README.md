@@ -1,75 +1,81 @@
-# React + TypeScript + Vite
+# Roulette
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+チームの雑談ルーレット用に作った、参加者の名前でまわすルーレットアプリです。
 
-Currently, two official plugins are available:
+## 概要
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 参加者を登録すると、人数に応じて等分されたルーレットが表示される
+- 「GO」ボタンで回転し、止まった位置の参加者を `alert` で表示する
+- 参加者の追加・削除は設定画面（`/settings`）から行う
 
-## React Compiler
+## 動機
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 雑談ルーレットをチームでやっていて、自力で作るとどうなるか試したかった
+- 最近自分でコードを書かないので、たまにはAIに頼らず書いてみたかった
 
-## Expanding the ESLint configuration
+## 使用技術
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| 分類 | 技術 |
+| --- | --- |
+| フレームワーク | React 19 / TypeScript |
+| ビルド | Vite |
+| スタイリング | Tailwind CSS v4 |
+| ルーティング | React Router v7 |
+| バリデーション | Zod（localStorage から読んだデータのパース） |
+| データ保存 | localStorage |
+| ルーレット描画 | CSS `conic-gradient` / Web Animations API |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 起動方法
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## 前提・方針
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- 本格的にやるなら Canvas API を使うことになりそうだが、慣れ親しんだ DOM + CSS の領域でやってみたかった
+- レスポンシブは面倒だったので非対応
+- エディタ内ではAI不使用、コード生成も基本させず、自分で考える or 検索することにした（どうしても聞いた点は[後述](#どうしてもaiに頼った点)）
+- 今回の焦点はルーレットで、バックエンドを作るほどでもないので、データ保存は localStorage で代用した
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 工夫点
 
-```
+### 1. 回転アニメーションは Web Animations API で制御
+
+CSS アニメーションで作るつもりだったが、停止時のルーレットの角度をランダムに決める必要があり、CSS だけでは表現しづらかった。そのため、JavaScript から制御できる Web Animations API（`element.animate()`）に切り替えた。
+
+仕組み（[Roulette.tsx](src/pages/home/components/Roulette.tsx) の `rotate`）:
+
+1. `getRandomDeg` で停止角度 `targetDeg`（0〜359）をランダムに決める
+2. `rotate(0)` から `rotate(360° × 8周 + targetDeg)` までのアニメーションを `animate()` で実行する（時間・イージングは [constants](src/pages/home/constants/index.ts) で設定。7秒かけて減速する）
+3. `await animation.finished` で終了を待ち、`targetDeg` から当たりの参加者を判定して `onAnimationEnd` で通知する
+
+細かい配慮:
+
+- `targetDeg` が区切り線の真上にならないよう、人数が割り切れる場合は区切り線の角度を除外している（`blackList`）
+- 連打された場合は、最後に押した回転の結果だけを通知する（`rotationRef` のカウンタで判定）
+- 画面遷移などでコンポーネントが破棄されたときに通知が飛ばないよう、アンマウント時にも同じカウンタを進めている
+
+### 2. 名前の配置（一番難しかった）
+
+一番苦労したのが、各セクションの中に名前を配置するところ。次の手順で、セクションの中に収まる長方形を作り、その中に名前を入れている。
+
+1. ルーレットの中心から、各区切り線の外周上の端点を三角関数で求める
+2. 隣り合う区切り線それぞれについて、中心〜端点を 1:3 に内分する点を `dividePoints` で求める
+3. その2点を結ぶ線を底辺として、外側（左方向）に 1px ずつ伸ばし、外周を超える手前までを長方形の「幅」とする（`getLeftOffsetPoint` を使用）
+4. 長方形の高さは2点間の距離。この長方形を `translate` と `rotate` でセクションの位置に合わせ、中央に名前を置く
+
+## どうしてもAIに頼った点
+
+- `getLeftOffsetPoint` の実装（[src/utils/math.ts](src/utils/math.ts)）
+  - 点 a → b の向きに対して、b を起点に左方向へ n 進んだ座標を返す関数
+  - a → b のベクトルを 90° 回転して左向きにし、長さ 1 に正規化してから n 倍して b に足す、という計算
+  - ベクトルの知識が抜けていて、自力では組み立てられなかった
+- この README のフォーマット整えと文章生成
+
+## 感想
+
+- すべて自分で考えて実装したので、内容を全て把握していて、バグが出ても場所がすぐイメージできた。AI時代以前の開発の楽しさを思い出した
+- 開発環境を立ち上げるだけで、Web 上の記事とバージョンが合わず無駄な時間を使った。この辺りはAIに全部任せられるので、本当に楽になったと実感した
+- 三角関数やベクトルといった高校数学を久しぶりに使った。三角関数はなんとか覚えていたが、ベクトルは完全に抜けていて、「そもそもベクトルとは」というところから復習が必要だった。数学ⅡBはセンター試験で一番得点率が低かった科目なので無理もない
