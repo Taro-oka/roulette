@@ -180,7 +180,9 @@ export const Roulette = ({ participants, onAnimationEnd }: RouletteProps) => {
     };
   }, []);
 
-  return (
+  return participants.length < 2 ? (
+    <div className="p-2">少なくとも2人以上を登録してください。</div>
+  ) : (
     <div className="w-full p-2">
       <section className="relative">
         <button

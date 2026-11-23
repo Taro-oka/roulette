@@ -14,6 +14,10 @@ export const getParticipants = (): Participant[] => {
   return parsed.map(toParticipant);
 };
 
+export const bulkUpdateParticipants = (participants: Participant[]) => {
+  localStorage.setItem(PARTICIPANT_KEY, JSON.stringify(participants));
+};
+
 export const updateParticipant = (
   id: string,
   data: Partial<Omit<Participant, "id">>,
