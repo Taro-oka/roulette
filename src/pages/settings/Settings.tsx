@@ -85,7 +85,7 @@ export const Settings = () => {
                     className="cursor-pointer bg-slate-500 w-6 h-6 rounded-sm"
                     onClick={() => deleteParticipant(i)}
                   >
-                    消
+                    ×
                   </button>
                 </div>
               ))}
@@ -108,18 +108,18 @@ export const Settings = () => {
                   className="cursor-pointer bg-slate-500 w-6 h-6 rounded-sm"
                   onClick={() => deleteAddition(i)}
                 >
-                  消
+                  ×
                 </button>
               </div>
             ))}
           </div>
         )}
 
-        <div className="w-40 flex flex-col gap-2">
-          <button className={buttonStyle} onClick={addNewSection}>
-            追加
+        <div className="w-60 flex flex-col gap-2 items-center">
+          <button className={`${buttonStyle} w-8`} onClick={addNewSection}>
+            +
           </button>
-          <button className={buttonStyle} onClick={save}>
+          <button className={`${buttonStyle} w-48`} onClick={save}>
             更新
           </button>
         </div>
